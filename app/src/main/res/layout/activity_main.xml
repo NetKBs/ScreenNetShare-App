@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <EditText
+        android:id="@+id/ip_address"
+        android:layout_width="374dp"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:layout_marginBottom="638dp"
+        android:ems="10"
+        android:hint="Enter IP"
+        android:inputType="text" />
+
+    <Button
+        android:id="@+id/connectBtn"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentEnd="true"
+        android:layout_alignParentBottom="true"
+        android:layout_marginEnd="250dp"
+        android:layout_marginBottom="580dp"
+        android:onClick="connectOnClick"
+        android:text="Connect" />
+
+    <TextView
+        android:id="@+id/ip_show"
+        android:layout_width="216dp"
+        android:layout_height="31dp"
+        android:layout_alignParentEnd="true"
+        android:layout_alignParentBottom="true"
+        android:layout_marginEnd="108dp"
+        android:layout_marginBottom="693dp"
+        android:text="000.000.000.000"
+        android:textSize="24sp" />
+
+    <Button
+        android:id="@+id/disconnectBtn"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentEnd="true"
+        android:layout_alignParentBottom="true"
+        android:layout_marginEnd="236dp"
+        android:layout_marginBottom="527dp"
+        android:onClick="disconnectOnClick"
+        android:text="Disconnect" />
+
+    <ImageView
+        android:id="@+id/image_view"
+        android:layout_width="384dp"
+        android:layout_height="508dp"
+        android:layout_alignParentEnd="true"
+        android:layout_alignParentBottom="true"
+        android:layout_marginStart="16dp"
+        android:layout_marginLeft="16dp"
+        android:layout_marginTop="-17dp"
+        android:layout_marginEnd="11dp"
+        android:layout_marginRight="16dp"
+        android:layout_marginBottom="11dp" />
+
+    <Button
+        android:id="@+id/startServerBtn"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentEnd="true"
+        android:layout_alignParentBottom="true"
+        android:layout_marginEnd="23dp"
+        android:layout_marginBottom="564dp"
+        android:text="startServer" />
+
+</RelativeLayout>
