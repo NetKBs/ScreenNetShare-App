@@ -2,53 +2,21 @@ package com.example.screennetshare
 
 
 import android.Manifest
-import android.content.BroadcastReceiver
-import android.content.Context
 import android.content.Intent
-import android.content.IntentFilter
-import android.content.pm.PackageManager
-import android.graphics.Bitmap
-import android.graphics.BitmapFactory
-import android.graphics.PixelFormat
-import android.hardware.display.DisplayManager
-import android.media.ImageReader
 import android.media.projection.MediaProjectionManager
 import android.os.Build
 import android.os.Bundle
-import android.os.Handler
-import android.os.Looper
-import android.util.DisplayMetrics
 import android.util.Log
-import android.view.View
 import android.widget.Button
 import android.widget.EditText
 import android.widget.ImageView
 import android.widget.TextView
-import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.annotation.RequiresApi
 import androidx.core.app.ActivityCompat
-import androidx.core.content.ContextCompat
-import kotlinx.coroutines.CoroutineScope
 import java.net.Inet4Address
 import java.net.NetworkInterface
 import java.net.SocketException
-
-
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
-import java.io.DataInputStream
-import java.io.DataOutputStream
-import java.io.InputStream
-import java.io.PrintWriter
-import java.net.ServerSocket
-import java.net.Socket
-import java.util.Scanner
 
 class MainActivity : ComponentActivity() {
 
@@ -60,8 +28,6 @@ class MainActivity : ComponentActivity() {
 
     private lateinit var server: Server
     private lateinit var client: Client
-
-
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)

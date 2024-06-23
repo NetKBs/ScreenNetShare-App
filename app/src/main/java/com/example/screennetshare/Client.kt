@@ -12,7 +12,7 @@ import java.io.DataInputStream
 import java.io.IOException
 import java.net.Socket
 
-class Client(private val imageView: ImageView): ComponentActivity() {
+class Client(private val imageView: ImageView) {
 
     private lateinit var clientSocket: Socket
     private lateinit var clientJob: Job
@@ -33,9 +33,8 @@ class Client(private val imageView: ImageView): ComponentActivity() {
                         input.readFully(imageByte)
 
                         if (imageLength > 0) {
-
                             val bitmap = BitmapFactory.decodeByteArray(imageByte, 0, imageByte.size)
-                            runOnUiThread {
+                            launch(Dispatchers.Main) {
                                 imageView.setImageBitmap(bitmap)
                             }
                         }

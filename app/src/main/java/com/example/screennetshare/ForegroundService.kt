@@ -29,9 +29,9 @@ import java.io.IOException
 import java.net.Socket
 import java.net.SocketException
 
-class ForegroundService: Service() {
+class ForegroundService : Service() {
 
-    private lateinit var  notificationManager: NotificationManager
+    private lateinit var notificationManager: NotificationManager
     private var mediaProjection: MediaProjection? = null
     private var virtualDisplay: VirtualDisplay? = null
     private lateinit var imageReader: ImageReader
@@ -54,16 +54,17 @@ class ForegroundService: Service() {
             val intent = Intent(context, ForegroundService::class.java)
             context.stopService(intent)
         }
-
     }
 
     override fun onCreate() {
         super.onCreate()
         notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        createServiceNotificationChannel()
     }
 
     override fun onDestroy() {
         super.onDestroy()
+        stopScreenCapture()
         isStarted = false
     }
 
@@ -85,26 +86,19 @@ class ForegroundService: Service() {
         return START_NOT_STICKY
     }
 
-    private var socket: Socket? = null
-
     private fun startScreenCapture(resultCode: Int, data: Intent, ip: String, port: Int) {
         val mediaProjectionManager = getSystemService(MEDIA_PROJECTION_SERVICE) as MediaProjectionManager
         mediaProjection = mediaProjectionManager.getMediaProjection(resultCode, data)
 
-        // Configurar el virtualDisplay y el Sufrace
         val metrics = resources.displayMetrics
         val density = metrics.density
         val width = metrics.widthPixels
         val height = metrics.heightPixels
 
-        // Crear un Surface (Puede ser SurfaceTexture o ImageReader)
         imageReader = ImageReader.newInstance(width, height, PixelFormat.RGBA_8888, 2)
 
         CoroutineScope(Dispatchers.IO).launch {
             try {
-                socket = Socket(ip, port)
-
-                // Crear el virtualDisplay
                 virtualDisplay = mediaProjection?.createVirtualDisplay(
                     "ScreenCapture",
                     width,
@@ -117,12 +111,10 @@ class ForegroundService: Service() {
                 )
 
                 val mainHandler = Handler(Looper.getMainLooper())
-
-                // Registrar un listener para procesar los frames
                 imageReader.setOnImageAvailableListener({ reader ->
                     val image = reader.acquireLatestImage()
                     if (image != null) {
-                        sendImage(image, ip)
+                        sendImage(image)
                         image.close()
                     }
                 }, mainHandler)
@@ -131,10 +123,9 @@ class ForegroundService: Service() {
                 e.printStackTrace()
             }
         }
-
     }
 
-    private fun sendImage(image: Image, ip: String) {
+    private fun sendImage(image: Image) {
         val plane = image.planes[0]
         val buffer = plane.buffer
         val width = image.width
@@ -145,24 +136,11 @@ class ForegroundService: Service() {
         val bitmap = Bitmap.createBitmap(width + rowPadding / pixelStride, height, Bitmap.Config.ARGB_8888)
         bitmap.copyPixelsFromBuffer(buffer)
 
-        // Comprime el Bitmap
         val outputStream = ByteArrayOutputStream()
         bitmap.compress(Bitmap.CompressFormat.JPEG, 20, outputStream)
         val compressedBitmapByteArray = outputStream.toByteArray()
 
-        CoroutineScope(Dispatchers.IO).launch {
-            try {
-                val output = DataOutputStream(socket?.getOutputStream())
-                output.writeInt(compressedBitmapByteArray.size)
-                output.write(compressedBitmapByteArray)
-                output.flush()
-            } catch (e: SocketException) {
-                Log.e("ForegroundService", "Error sending image: ${e.message}")
-            } catch (e: IOException) {
-                Log.e("ForegroundService", "Error writing to socket: ${e.message}")
-            }
-
-        }
+        BufferImages.addImage(compressedBitmapByteArray)
     }
 
     private fun stopScreenCapture() {
@@ -173,8 +151,6 @@ class ForegroundService: Service() {
     }
 
     private fun makeForeground() {
-        createServiceNotificationChannel()
-
         val notification: Notification = NotificationCompat.Builder(this, CHANNEL_ID)
             .setContentTitle("Foreground Service Title")
             .setContentText("Foreground Service Content Context")
@@ -185,22 +161,15 @@ class ForegroundService: Service() {
     }
 
     private fun createServiceNotificationChannel() {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
-            return
-        }
-
         val channel = NotificationChannel(
             CHANNEL_ID,
             "Foreground Service Channel",
             NotificationManager.IMPORTANCE_DEFAULT
         )
-
         notificationManager.createNotificationChannel(channel)
     }
 
     override fun onBind(intent: Intent?): IBinder? {
-        throw UnsupportedOperationException()
+        return null
     }
-
-
 }
