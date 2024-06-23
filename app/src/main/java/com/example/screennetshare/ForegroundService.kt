@@ -137,7 +137,7 @@ class ForegroundService : Service() {
         bitmap.copyPixelsFromBuffer(buffer)
 
         val outputStream = ByteArrayOutputStream()
-        bitmap.compress(Bitmap.CompressFormat.JPEG, 20, outputStream)
+        bitmap.compress(Bitmap.CompressFormat.JPEG, 10, outputStream)
         val compressedBitmapByteArray = outputStream.toByteArray()
 
         BufferImages.addImage(compressedBitmapByteArray)
