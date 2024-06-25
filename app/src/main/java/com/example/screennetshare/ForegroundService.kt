@@ -74,8 +74,14 @@ class ForegroundService : Service() {
             isStarted = true
         }
 
+
+        val data = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            intent?.getParcelableExtra("data", Intent::class.java)
+        } else {
+            @Suppress("DEPRECATION")
+            intent?.getParcelableExtra("data")
+        }
         val resultCode = intent?.getIntExtra("resultCode", 0) ?: 0
-        val data = intent?.getParcelableExtra<Intent>("data")
         val ip = intent?.getStringExtra("ip") ?: ""
         val port = intent?.getIntExtra("port", 0) ?: 0
 
@@ -96,6 +102,18 @@ class ForegroundService : Service() {
         val height = metrics.heightPixels
 
         imageReader = ImageReader.newInstance(width, height, PixelFormat.RGBA_8888, 2)
+
+        // registrar callback
+        mediaProjection?.registerCallback(object: MediaProjection.Callback() {
+            override fun onStop() {
+                // manejar la detención de la proyecció (liberar recursos)
+                virtualDisplay?.release()
+                imageReader.close()
+                mediaProjection?.unregisterCallback(this)
+                mediaProjection = null
+            }
+
+        }, null)
 
         CoroutineScope(Dispatchers.IO).launch {
             try {
