@@ -20,13 +20,12 @@ class Client(private val imageView: ImageView) {
 
     fun startClient(ip: String, port: Int) {
         if (!isConnected) {
-            isConnected = true
-
             clientJob = CoroutineScope(Dispatchers.IO).launch {
                 try {
                     clientSocket = Socket(ip, port)
                     val input = DataInputStream(clientSocket.getInputStream())
                     val options = BitmapFactory.Options()
+                    isConnected = true
 
                     while (true) {
                         val imageLength = input.readInt()
@@ -51,7 +50,9 @@ class Client(private val imageView: ImageView) {
                     Log.e("Client", "Error: ${e.message}")
                 } finally {
                     try {
-                        clientSocket.close()
+                        if (::clientSocket.isInitialized) {
+                            clientSocket.close()
+                        }
                     } catch (e: IOException) {
                         Log.e("Client", "Error closing socket: ${e.message}")
                     }
@@ -65,7 +66,9 @@ class Client(private val imageView: ImageView) {
             isConnected = false
             clientJob.cancel()
             try {
-                clientSocket.close()
+                if (::clientSocket.isInitialized) {
+                    clientSocket.close()
+                }
             } catch (e: IOException) {
                 Log.e("Client", "Error closing socket: ${e.message}")
             }

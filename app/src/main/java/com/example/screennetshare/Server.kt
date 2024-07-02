@@ -93,8 +93,6 @@ class Server (private val portPreview: TextView) {
         }
     }
 
-
-
     fun stopServer() {
         serverRunning = false
         synchronized(clients) {
@@ -106,35 +104,11 @@ class Server (private val portPreview: TextView) {
         } catch (e: IOException) {
             Log.e("Server", "Error closing server socket: ${e.message}")
         }
-        serverJob.cancel()
-    }
-
-    private fun clientHandler(client: Socket) {
-        try {
-            val input = DataInputStream(client.getInputStream())
-
-            while (client.isConnected) {
-                try {
-                    val message = input.readUTF()
-                    Log.d("ClientHandler", "Received message from client: $message")
-                } catch (e: EOFException) {
-                    break
-                } catch (e: IOException) {
-                    Log.e("ClientHandler", "Error reading from client: ${e.message}")
-                    break
-                }
-            }
-        } catch (e: IOException) {
-            Log.e("ClientHandler", "Error handling client: ${e.message}")
-        } finally {
-            synchronized(clients) {
-                clients.remove(client)
-            }
-            try {
-                client.close()
-            } catch (e: IOException) {
-                Log.e("ClientHandler", "Error closing client socket: ${e.message}")
-            }
+        if (::serverJob.isInitialized) { // Verifica si serverJob ha sido inicializada
+            serverJob.cancel()
+        } else {
+            Log.w("Server", "serverJob was not initialized when attempting to stopServer()")
         }
     }
+
 }
