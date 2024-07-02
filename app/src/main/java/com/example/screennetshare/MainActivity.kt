@@ -6,13 +6,17 @@ import android.content.Intent
 import android.media.projection.MediaProjectionManager
 import android.os.Build
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.util.Log
 import android.widget.Button
 import android.widget.EditText
 import android.widget.ImageView
 import android.widget.TextView
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.core.app.ActivityCompat
 import java.net.Inet4Address
 import java.net.NetworkInterface
@@ -25,9 +29,13 @@ class MainActivity : ComponentActivity() {
     private lateinit var connectButton: Button
     private lateinit var disconnectButton: Button
     private lateinit var imageView: ImageView
+    private lateinit var portPreview: TextView
+    private lateinit var portInput: EditText
 
     private lateinit var server: Server
     private lateinit var client: Client
+
+    private val handler = Handler(Looper.getMainLooper())
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -48,6 +56,9 @@ class MainActivity : ComponentActivity() {
         disconnectButton = findViewById(R.id.disconnectBtn)
         val startServerButton = findViewById<Button>(R.id.startServerBtn)
 
+        portPreview = findViewById(R.id.portPreview)
+        portInput = findViewById(R.id.portInput)
+
         ipAddress = findViewById(R.id.ip_address)
         ipShow = findViewById(R.id.ip_show)
         ipShow.text = getLocalIpAddress()
@@ -56,15 +67,30 @@ class MainActivity : ComponentActivity() {
         imageView = findViewById(R.id.image_view)
 
         // Initialize Server and Client
-        server = Server()
+        server = Server(portPreview)
         client = Client(imageView)
 
         // Set click listeners
         connectButton.setOnClickListener {
-            client.startClient(ipAddress.text.toString(), 8080)
+            if (ipAddress.text.toString().isEmpty()) {
+                handler.post {
+                    Toast.makeText(applicationContext, "Please enter an IP address", Toast.LENGTH_SHORT).show()
+                }
+                return@setOnClickListener
+            } else if (portInput.text.toString().isEmpty()) {
+                handler.post {
+                    Toast.makeText(applicationContext, "Please enter a port number", Toast.LENGTH_SHORT).show()
+                }
+                return@setOnClickListener
+            }
+
+            client.startClient(ipAddress.text.toString(), portInput.text.toString().toInt())
         }
         disconnectButton.setOnClickListener {
-            client.stopClient()
+            if (client.isConnected) {
+                client.stopClient()
+            }
+
         }
         startServerButton.setOnClickListener {
             server.startServer()
@@ -78,17 +104,15 @@ class MainActivity : ComponentActivity() {
             val intent = Intent(this, ForegroundService::class.java).apply {
                 putExtra("resultCode", result.resultCode)
                 putExtra("data", result.data)
-                putExtra("ip", ipShow.text.toString())
-                putExtra("port", 8080)
             }
             startForegroundService(intent)
-            println("Screen capture permission granted")
+            Log.d("MainActivity","Screen capture permission granted")
         } else {
             Log.d("MainActivity", "Screen capture permission denied")
         }
     }
 
-    fun requestScreenCapturePermission() {
+    private fun requestScreenCapturePermission() {
         val mediaProjectionManager = getSystemService(MEDIA_PROJECTION_SERVICE) as MediaProjectionManager
         screenCaptureLauncher.launch(mediaProjectionManager.createScreenCaptureIntent())
     }
@@ -111,6 +135,14 @@ class MainActivity : ComponentActivity() {
         }
         return null
     }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        server.stopServer()
+        client.stopClient()
+        stopService(Intent(this, ForegroundService::class.java))
+    }
+
 }
 
 

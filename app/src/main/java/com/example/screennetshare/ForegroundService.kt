@@ -82,17 +82,15 @@ class ForegroundService : Service() {
             intent?.getParcelableExtra("data")
         }
         val resultCode = intent?.getIntExtra("resultCode", 0) ?: 0
-        val ip = intent?.getStringExtra("ip") ?: ""
-        val port = intent?.getIntExtra("port", 0) ?: 0
 
         if (resultCode != 0 && data != null) {
-            startScreenCapture(resultCode, data, ip, port)
+            startScreenCapture(resultCode, data)
         }
 
         return START_NOT_STICKY
     }
 
-    private fun startScreenCapture(resultCode: Int, data: Intent, ip: String, port: Int) {
+    private fun startScreenCapture(resultCode: Int, data: Intent) {
         val mediaProjectionManager = getSystemService(MEDIA_PROJECTION_SERVICE) as MediaProjectionManager
         mediaProjection = mediaProjectionManager.getMediaProjection(resultCode, data)
 
@@ -155,7 +153,7 @@ class ForegroundService : Service() {
         bitmap.copyPixelsFromBuffer(buffer)
 
         val outputStream = ByteArrayOutputStream()
-        bitmap.compress(Bitmap.CompressFormat.JPEG, 10, outputStream)
+        bitmap.compress(Bitmap.CompressFormat.JPEG, 50, outputStream)
         val compressedBitmapByteArray = outputStream.toByteArray()
 
         BufferImages.addImage(compressedBitmapByteArray)

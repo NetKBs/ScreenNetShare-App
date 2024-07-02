@@ -16,7 +16,7 @@ class Client(private val imageView: ImageView) {
 
     private lateinit var clientSocket: Socket
     private lateinit var clientJob: Job
-    private var isConnected = false
+    var isConnected = false
 
     fun startClient(ip: String, port: Int) {
         if (!isConnected) {
@@ -49,12 +49,18 @@ class Client(private val imageView: ImageView) {
 
     fun stopClient() {
         isConnected = false
-        clientJob.cancel()
-        try {
-            clientSocket.close()
-        } catch (e: IOException) {
-            Log.e("Client", "Error closing socket: ${e.message}")
+        if (::clientJob.isInitialized) {
+            clientJob.cancel()
+        }
+        if (::clientSocket.isInitialized) {
+            try {
+                clientSocket.close()
+            } catch (e: IOException) {
+                Log.e("Client", "Error closing socket: ${e.message}")
+            }
         }
     }
+
+
 
 }
