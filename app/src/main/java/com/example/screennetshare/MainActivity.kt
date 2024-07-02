@@ -68,7 +68,9 @@ class MainActivity : ComponentActivity() {
 
         // Initialize Server and Client
         server = Server(portPreview)
-        client = Client(imageView)
+
+        val inflater = layoutInflater.inflate(R.layout.client_view, null)
+        val screenView = inflater.findViewById<ImageView>(R.id.screenView)
 
         // Set click listeners
         connectButton.setOnClickListener {
@@ -84,8 +86,15 @@ class MainActivity : ComponentActivity() {
                 return@setOnClickListener
             }
 
-            client.startClient(ipAddress.text.toString(), portInput.text.toString().toInt())
+                val nextView = Intent(this, ClientViewActivity::class.java).apply {
+                    putExtra("ip", ipAddress.text.toString())
+                    putExtra("port", portInput.text.toString().toInt())
+                }
+                startActivity(nextView)
+
         }
+
+
         disconnectButton.setOnClickListener {
             if (client.isConnected) {
                 client.stopClient()
@@ -139,7 +148,9 @@ class MainActivity : ComponentActivity() {
     override fun onDestroy() {
         super.onDestroy()
         server.stopServer()
-        client.stopClient()
+        if (::client.isInitialized) {
+            client.stopClient()
+        }
         stopService(Intent(this, ForegroundService::class.java))
     }
 
