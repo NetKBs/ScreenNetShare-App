@@ -36,6 +36,7 @@ class ForegroundService : Service() {
     private var virtualDisplay: VirtualDisplay? = null
     private lateinit var imageReader: ImageReader
     private var isStarted = false
+    private var isCapturing = false
 
     companion object {
         private const val ONGOING_NOTIFICATION_ID = 101
@@ -91,6 +92,9 @@ class ForegroundService : Service() {
     }
 
     private fun startScreenCapture(resultCode: Int, data: Intent) {
+        if (isCapturing) return
+        isCapturing = true
+
         val mediaProjectionManager = getSystemService(MEDIA_PROJECTION_SERVICE) as MediaProjectionManager
         mediaProjection = mediaProjectionManager.getMediaProjection(resultCode, data)
 
@@ -109,6 +113,7 @@ class ForegroundService : Service() {
                 imageReader.close()
                 mediaProjection?.unregisterCallback(this)
                 mediaProjection = null
+                isCapturing = false
             }
 
         }, null)
@@ -164,6 +169,7 @@ class ForegroundService : Service() {
         virtualDisplay = null
         mediaProjection?.stop()
         mediaProjection = null
+        isCapturing = false
     }
 
     private fun makeForeground() {

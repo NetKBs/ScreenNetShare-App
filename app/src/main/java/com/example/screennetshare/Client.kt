@@ -26,14 +26,22 @@ class Client(private val imageView: ImageView) {
                 try {
                     clientSocket = Socket(ip, port)
                     val input = DataInputStream(clientSocket.getInputStream())
+                    val options = BitmapFactory.Options()
 
                     while (true) {
                         val imageLength = input.readInt()
-                        val imageByte = ByteArray(imageLength)
-                        input.readFully(imageByte)
-
                         if (imageLength > 0) {
-                            val bitmap = BitmapFactory.decodeByteArray(imageByte, 0, imageByte.size)
+                            val byteArray = ByteArray(imageLength)
+                            input.readFully(byteArray)
+
+                            // Downsample la imagen
+                            options.inJustDecodeBounds = true
+                            BitmapFactory.decodeByteArray(byteArray, 0, byteArray.size, options)
+                            options.inSampleSize = calculateInSampleSize(options, imageView.width, imageView.height)
+                            options.inJustDecodeBounds = false
+
+                            val bitmap = BitmapFactory.decodeByteArray(byteArray, 0, byteArray.size, options)
+
                             launch(Dispatchers.Main) {
                                 imageView.setImageBitmap(bitmap)
                             }
@@ -41,18 +49,21 @@ class Client(private val imageView: ImageView) {
                     }
                 } catch (e: Exception) {
                     Log.e("Client", "Error: ${e.message}")
+                } finally {
+                    try {
+                        clientSocket.close()
+                    } catch (e: IOException) {
+                        Log.e("Client", "Error closing socket: ${e.message}")
+                    }
                 }
             }
         }
     }
 
-
     fun stopClient() {
-        isConnected = false
-        if (::clientJob.isInitialized) {
+        if (isConnected) {
+            isConnected = false
             clientJob.cancel()
-        }
-        if (::clientSocket.isInitialized) {
             try {
                 clientSocket.close()
             } catch (e: IOException) {
@@ -61,6 +72,21 @@ class Client(private val imageView: ImageView) {
         }
     }
 
+    private fun calculateInSampleSize(options: BitmapFactory.Options, reqWidth: Int, reqHeight: Int): Int {
+        // Raw image size
+        val height = options.outHeight
+        val width = options.outWidth
+        var inSampleSize = 1
 
+        if (height > reqHeight || width > reqWidth) {
+            val halfHeight = height / 2
+            val halfWidth = width / 2
 
+            while ((halfHeight / inSampleSize) >= reqHeight && (halfWidth / inSampleSize) >= reqWidth) {
+                inSampleSize *= 2
+            }
+        }
+
+        return inSampleSize
+    }
 }
