@@ -46,7 +46,7 @@ class Server (private val portPreview: TextView) {
                 }
 
                 launch {
-                    while (serverRunning && clients.isNotEmpty()) {
+                    while (serverRunning) {
                         if (!BufferImages.isEmpty()) {
                             val imageData = BufferImages.getImage()
                             if (imageData != null) {
