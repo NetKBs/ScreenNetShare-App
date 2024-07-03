@@ -5,17 +5,12 @@ import android.widget.TextView
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
-import java.io.DataInputStream
 import java.io.DataOutputStream
-import java.io.EOFException
 import java.io.IOException
 import java.net.ServerSocket
 import java.net.Socket
 import java.net.SocketException
-import java.util.concurrent.CopyOnWriteArrayList
 
 class Server (private val portPreview: TextView) {
 
@@ -30,18 +25,17 @@ class Server (private val portPreview: TextView) {
             serverRunning = true
 
             serverJob = CoroutineScope(Dispatchers.IO).launch {
-
                 // Conseguir un puerto libre
                 while (serverSocket == null && port < 8100) {
                     try {
                         serverSocket = ServerSocket(port)
                         Log.d("Server", "Server started on port $port")
                         launch(Dispatchers.Main) {
-                            portPreview.text = "Port: $port"
+                            portPreview.text = "Servidor escuchando en el puerto: $port"
                         }
                     } catch (e: IOException) {
                         Log.w("Server", "Port $port is in use, trying next port...")
-                        port++ // Increment the port number
+                        port++
                     }
                 }
 
@@ -104,10 +98,8 @@ class Server (private val portPreview: TextView) {
         } catch (e: IOException) {
             Log.e("Server", "Error closing server socket: ${e.message}")
         }
-        if (::serverJob.isInitialized) { // Verifica si serverJob ha sido inicializada
+        if (::serverJob.isInitialized) {
             serverJob.cancel()
-        } else {
-            Log.w("Server", "serverJob was not initialized when attempting to stopServer()")
         }
     }
 

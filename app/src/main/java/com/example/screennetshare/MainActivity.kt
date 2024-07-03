@@ -11,12 +11,10 @@ import android.os.Looper
 import android.util.Log
 import android.widget.Button
 import android.widget.EditText
-import android.widget.ImageView
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.core.app.ActivityCompat
 import java.net.Inet4Address
 import java.net.NetworkInterface
@@ -24,19 +22,8 @@ import java.net.SocketException
 
 class MainActivity : ComponentActivity() {
 
-    private lateinit var ipShow: TextView
-    private lateinit var ipAddress: EditText
-    private lateinit var connectButton: Button
-    private lateinit var disconnectButton: Button
-    private lateinit var imageView: ImageView
-    private lateinit var portPreview: TextView
-    private lateinit var portInput: EditText
-
     private lateinit var server: Server
-    private lateinit var client: Client
-
     private val handler = Handler(Looper.getMainLooper())
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -49,63 +36,60 @@ class MainActivity : ComponentActivity() {
             )
         }
 
-        setContentView(R.layout.activity_main)
+        setContentView(R.layout.main_view)
 
         // Get UI elements
-        connectButton = findViewById(R.id.connectBtn)
-        disconnectButton = findViewById(R.id.disconnectBtn)
-        val startServerButton = findViewById<Button>(R.id.startServerBtn)
+        val ipInput = findViewById<EditText>(R.id.ipInput)
+        val portInput = findViewById<EditText>(R.id.portInput)
+        val ipShow = findViewById<TextView>(R.id.ipShow)
+        val serverStatus = findViewById<TextView>(R.id.serverStatus)
+        val btnConnect = findViewById<Button>(R.id.btnConnect)
+        val btnStartServer = findViewById<Button>(R.id.btnStartServer)
+        val btnStopServer = findViewById<Button>(R.id.btnStopServer)
 
-        portPreview = findViewById(R.id.portPreview)
-        portInput = findViewById(R.id.portInput)
-
-        ipAddress = findViewById(R.id.ip_address)
-        ipShow = findViewById(R.id.ip_show)
         ipShow.text = getLocalIpAddress()
-        ipAddress.setText(getLocalIpAddress())
+        serverStatus.text = "Servidor no iniciado"
 
-        imageView = findViewById(R.id.image_view)
+        server = Server(serverStatus)
 
-        // Initialize Server and Client
-        server = Server(portPreview)
-
-        val inflater = layoutInflater.inflate(R.layout.client_view, null)
-        val screenView = inflater.findViewById<ImageView>(R.id.screenView)
-
-        // Set click listeners
-        connectButton.setOnClickListener {
-            if (ipAddress.text.toString().isEmpty()) {
+        // Client handler
+        btnConnect.setOnClickListener {
+            if (ipInput.text.toString().isEmpty()) {
                 handler.post {
                     Toast.makeText(applicationContext, "Please enter an IP address", Toast.LENGTH_SHORT).show()
                 }
                 return@setOnClickListener
-            } else if (portInput.text.toString().isEmpty()) {
+            }
+            if (portInput.text.toString().isEmpty()) {
                 handler.post {
                     Toast.makeText(applicationContext, "Please enter a port number", Toast.LENGTH_SHORT).show()
                 }
                 return@setOnClickListener
             }
 
-                val nextView = Intent(this, ClientViewActivity::class.java).apply {
-                    putExtra("ip", ipAddress.text.toString())
-                    putExtra("port", portInput.text.toString().toInt())
-                }
-                startActivity(nextView)
-
-        }
-
-
-        disconnectButton.setOnClickListener {
-            if (client.isConnected) {
-                client.stopClient()
+            val clientView = Intent(this, ClientViewActivity::class.java).apply {
+                putExtra("ip", ipInput.text.toString())
+                putExtra("port", portInput.text.toString().toInt())
             }
-
+            startActivity(clientView)
         }
-        startServerButton.setOnClickListener {
+
+        // Server handler
+        btnStartServer.setOnClickListener {
             server.startServer()
             requestScreenCapturePermission()
         }
+        btnStopServer.setOnClickListener {
+            server.stopServer()
+            stopService(Intent(this, ForegroundService::class.java))
+            serverStatus.text = "Servidor no iniciado"
+        }
 
+    }
+
+    private fun requestScreenCapturePermission() {
+        val mediaProjectionManager = getSystemService(MEDIA_PROJECTION_SERVICE) as MediaProjectionManager
+        screenCaptureLauncher.launch(mediaProjectionManager.createScreenCaptureIntent())
     }
 
     private val screenCaptureLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
@@ -119,11 +103,6 @@ class MainActivity : ComponentActivity() {
         } else {
             Log.d("MainActivity", "Screen capture permission denied")
         }
-    }
-
-    private fun requestScreenCapturePermission() {
-        val mediaProjectionManager = getSystemService(MEDIA_PROJECTION_SERVICE) as MediaProjectionManager
-        screenCaptureLauncher.launch(mediaProjectionManager.createScreenCaptureIntent())
     }
 
     private fun getLocalIpAddress(): String? {
@@ -147,9 +126,8 @@ class MainActivity : ComponentActivity() {
 
     override fun onDestroy() {
         super.onDestroy()
-        server.stopServer()
-        if (::client.isInitialized) {
-            client.stopClient()
+        if (::server.isInitialized) {
+            server.stopServer()
         }
         stopService(Intent(this, ForegroundService::class.java))
     }

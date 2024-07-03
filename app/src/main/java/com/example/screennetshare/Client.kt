@@ -3,8 +3,9 @@ package com.example.screennetshare
 import android.graphics.BitmapFactory
 import android.util.Log
 import android.widget.ImageView
-import androidx.activity.ComponentActivity
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
@@ -18,47 +19,54 @@ class Client(private val imageView: ImageView) {
     private lateinit var clientJob: Job
     var isConnected = false
 
-    fun startClient(ip: String, port: Int) {
-        if (!isConnected) {
-            clientJob = CoroutineScope(Dispatchers.IO).launch {
+    fun startClient(ip: String, port: Int): Deferred<Boolean> {
+        // Para indicar si la conexión fue exitosa o no
+        val connectionResult = CompletableDeferred<Boolean>()
+
+        clientJob = CoroutineScope(Dispatchers.IO).launch {
+            try {
+                clientSocket = Socket(ip, port)
+                val input = DataInputStream(clientSocket.getInputStream())
+                val options = BitmapFactory.Options()
+                isConnected = true
+                connectionResult.complete(true)
+
+                while (true) {
+                    val imageLength = input.readInt()
+                    if (imageLength > 0) {
+                        val byteArray = ByteArray(imageLength)
+                        input.readFully(byteArray)
+
+                        // Downsample la imagen
+                        options.inJustDecodeBounds = true
+                        BitmapFactory.decodeByteArray(byteArray, 0, byteArray.size, options)
+                        options.inSampleSize = calculateInSampleSize(options, imageView.width, imageView.height)
+                        options.inJustDecodeBounds = false
+
+                        val bitmap = BitmapFactory.decodeByteArray(byteArray, 0, byteArray.size, options)
+
+                        launch(Dispatchers.Main) {
+                            imageView.setImageBitmap(bitmap)
+                        }
+                    }
+                }
+
+            } catch (e: Exception) {
+                connectionResult.complete(false)
+                Log.e("Client", "Error: ${e.message}")
+            } finally {
+                isConnected = false
                 try {
-                    clientSocket = Socket(ip, port)
-                    val input = DataInputStream(clientSocket.getInputStream())
-                    val options = BitmapFactory.Options()
-                    isConnected = true
-
-                    while (true) {
-                        val imageLength = input.readInt()
-                        if (imageLength > 0) {
-                            val byteArray = ByteArray(imageLength)
-                            input.readFully(byteArray)
-
-                            // Downsample la imagen
-                            options.inJustDecodeBounds = true
-                            BitmapFactory.decodeByteArray(byteArray, 0, byteArray.size, options)
-                            options.inSampleSize = calculateInSampleSize(options, imageView.width, imageView.height)
-                            options.inJustDecodeBounds = false
-
-                            val bitmap = BitmapFactory.decodeByteArray(byteArray, 0, byteArray.size, options)
-
-                            launch(Dispatchers.Main) {
-                                imageView.setImageBitmap(bitmap)
-                            }
-                        }
+                    if (::clientSocket.isInitialized) {
+                        clientSocket.close()
                     }
-                } catch (e: Exception) {
-                    Log.e("Client", "Error: ${e.message}")
-                } finally {
-                    try {
-                        if (::clientSocket.isInitialized) {
-                            clientSocket.close()
-                        }
-                    } catch (e: IOException) {
-                        Log.e("Client", "Error closing socket: ${e.message}")
-                    }
+                } catch (e: IOException) {
+                    Log.e("Client", "Error closing socket: ${e.message}")
                 }
             }
         }
+
+        return connectionResult
     }
 
     fun stopClient() {
