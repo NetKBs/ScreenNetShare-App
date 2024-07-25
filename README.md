@@ -1,4 +1,4 @@
-![uso-aplicacion](https://github.com/user-attachments/assets/3554d012-e430-45bc-8d3c-b9623e97620b)
+
 # Screen Net Share
 ##  Transmisión de Pantalla Dispositivos Android
 
