@@ -12,11 +12,13 @@ Una aplicación que permite la comunicación en tiempo real entre dos dispositiv
 
 ## Screenshots
 Vista Principal de la Aplicación
+
 <img src="https://github.com/user-attachments/assets/7c6e2fa6-cbcd-4ac9-bf2c-56be1e31a363" alt="Vista principal" width="300">
 
 <br/>
 
 Demostración de Uso
+
 https://github.com/user-attachments/assets/01cc3a7b-9a1d-4a72-ad34-19633cef093c
 
 
